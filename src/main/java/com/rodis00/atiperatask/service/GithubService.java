@@ -19,10 +19,15 @@ import java.util.Objects;
 @Service
 public class GithubService {
 
+    private final RestTemplate restTemplate;
+
+    public GithubService() {
+        restTemplate = new RestTemplate();
+    }
+
     public GithubUser getGithubUser(String username) {
         try {
             String url = "https://api.github.com/users/" + username;
-            RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<GithubUser> response = restTemplate.getForEntity(url, GithubUser.class);
 
             return response.getBody();
@@ -38,7 +43,6 @@ public class GithubService {
             String repositoryUrl,
             boolean fork
     ) {
-        RestTemplate restTemplate = new RestTemplate();
         HttpEntity<GithubUserRepository[]> response = restTemplate
                 .getForEntity(repositoryUrl, GithubUserRepository[].class);
 
@@ -60,7 +64,6 @@ public class GithubService {
     public List<GithubRepositoryBranch> getGithubUserRepositoryBranch(String owner, String repositoryName) {
         String url = "https://api.github.com/repos/" + owner + "/" + repositoryName + "/branches";
 
-        RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<GithubRepositoryBranch[]> response = restTemplate
                 .getForEntity(url, GithubRepositoryBranch[].class);
 
