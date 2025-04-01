@@ -1,15 +1,12 @@
 package com.rodis00.atiperatask.service;
 
 import com.rodis00.atiperatask.exception.GithubUserNotFoundException;
-import com.rodis00.atiperatask.record.GithubRepositoryBranch;
-import com.rodis00.atiperatask.record.GithubUser;
-import com.rodis00.atiperatask.record.GithubUserRepository;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.rodis00.atiperatask.record.Branch;
+import com.rodis00.atiperatask.record.User;
+import com.rodis00.atiperatask.record.Repository;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,37 +16,37 @@ import java.util.Objects;
 @Service
 public class GithubService {
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
 
     public GithubService() {
-        restTemplate = new RestTemplate();
+        restClient = RestClient.builder()
+                .baseUrl("https://api.github.com/")
+                .build();
     }
 
-    public GithubUser getGithubUser(String username) {
-        try {
-            String url = "https://api.github.com/users/" + username;
-            ResponseEntity<GithubUser> response = restTemplate.getForEntity(url, GithubUser.class);
-
-            return response.getBody();
-        } catch (HttpStatusCodeException e) {
-            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-                throw new GithubUserNotFoundException("Github user not found");
-            }
-            throw new RuntimeException("Failed to fetch GitHub user: " + e.getMessage(), e);
-        }
+    public User getGithubUser(String username) {
+        return restClient.get()
+                .uri("users/{username}", username)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
+                    throw new GithubUserNotFoundException("Github user not found");
+                })
+                .body(User.class);
     }
 
-    public List<GithubUserRepository> getGithubUserRepository(
-            String repositoryUrl,
+    public List<Repository> getGithubUserRepository(
+            String username,
             boolean fork
     ) {
-        HttpEntity<GithubUserRepository[]> response = restTemplate
-                .getForEntity(repositoryUrl, GithubUserRepository[].class);
+        Repository[] repositories = restClient.get()
+                .uri("users/{username}/repos", username)
+                .retrieve()
+                .body(Repository[].class);
 
-        List<GithubUserRepository> userRepos = new ArrayList<>();
+        List<Repository> userRepos = new ArrayList<>();
 
-        if (Objects.nonNull(response.getBody())) {
-            userRepos.addAll(Arrays.asList(response.getBody()));
+        if (Objects.nonNull(repositories)) {
+            userRepos.addAll(Arrays.asList(repositories));
         }
 
         if (fork) {
@@ -61,16 +58,18 @@ public class GithubService {
         return userRepos;
     }
 
-    public List<GithubRepositoryBranch> getGithubUserRepositoryBranch(String owner, String repositoryName) {
-        String url = "https://api.github.com/repos/" + owner + "/" + repositoryName + "/branches";
+    public List<Branch> getGithubUserRepositoryBranch(String owner, String repositoryName) {
+        String uri = "repos/" + owner + "/" + repositoryName + "/branches";
 
-        ResponseEntity<GithubRepositoryBranch[]> response = restTemplate
-                .getForEntity(url, GithubRepositoryBranch[].class);
+        Branch[] branches = restClient.get()
+                .uri(uri)
+                .retrieve()
+                .body(Branch[].class);
 
-        List<GithubRepositoryBranch> repoBranches = new ArrayList<>();
+        List<Branch> repoBranches = new ArrayList<>();
 
-        if (Objects.nonNull(response.getBody())) {
-            repoBranches.addAll(Arrays.asList(response.getBody()));
+        if (Objects.nonNull(branches)) {
+            repoBranches.addAll(Arrays.asList(branches));
         }
 
         return repoBranches;
