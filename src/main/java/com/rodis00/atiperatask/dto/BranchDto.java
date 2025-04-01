@@ -1,6 +1,6 @@
-package com.rodis00.atiperatask.model;
+package com.rodis00.atiperatask.dto;
 
-public class RepositoryBranch {
+public class BranchDto {
     private String name;
     private String sha;
 

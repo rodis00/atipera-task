@@ -18,8 +18,8 @@ public class ApiController {
         this.apiService = apiService;
     }
 
-    @GetMapping("get-user/{username}")
-    public ResponseEntity<ApiResponse> getUser(@PathVariable String username) {
-        return ResponseEntity.ok(apiService.getUser(username));
+    @GetMapping("github/users/{username}")
+    public ResponseEntity<ApiResponse> findGithubUser(@PathVariable String username) {
+        return ResponseEntity.ok(apiService.findGithubUser(username));
     }
 }

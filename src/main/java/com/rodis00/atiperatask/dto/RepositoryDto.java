@@ -1,10 +1,10 @@
-package com.rodis00.atiperatask.model;
+package com.rodis00.atiperatask.dto;
 
 import java.util.List;
 
-public class Repository {
+public class RepositoryDto {
     private String name;
-    private List<RepositoryBranch> branches;
+    private List<BranchDto> branches;
 
     public String getName() {
         return name;
@@ -14,11 +14,11 @@ public class Repository {
         this.name = name;
     }
 
-    public List<RepositoryBranch> getBranches() {
+    public List<BranchDto> getBranches() {
         return branches;
     }
 
-    public void setBranches(List<RepositoryBranch> branches) {
+    public void setBranches(List<BranchDto> branches) {
         this.branches = branches;
     }
 }

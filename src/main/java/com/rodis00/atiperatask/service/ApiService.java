@@ -1,10 +1,11 @@
 package com.rodis00.atiperatask.service;
 
-import com.rodis00.atiperatask.record.GithubUser;
-import com.rodis00.atiperatask.record.GithubUserRepository;
+import com.rodis00.atiperatask.dto.BranchDto;
+import com.rodis00.atiperatask.dto.RepositoryDto;
+import com.rodis00.atiperatask.dto.UserDto;
 import com.rodis00.atiperatask.model.ApiResponse;
-import com.rodis00.atiperatask.model.Repository;
-import com.rodis00.atiperatask.model.RepositoryBranch;
+import com.rodis00.atiperatask.record.Branch;
+import com.rodis00.atiperatask.record.User;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,35 +19,67 @@ public class ApiService {
         this.githubService = githubService;
     }
 
-    public ApiResponse getUser(String username) {
-        GithubUser user = githubService.getGithubUser(username);
+    public ApiResponse findGithubUser(String username) {
+        UserDto user = createUserDto(username);
+        List<RepositoryDto> repositoryDtoList = getRepositoryDtoList(username);
 
-        List<GithubUserRepository> userRepositories = githubService
-                .getGithubUserRepository(user.reposUrl(), false);
+        return createApiResponse(user, repositoryDtoList);
+    }
 
-        List<Repository> repositories = userRepositories.stream()
-                .map(r -> {
-                    Repository repository = new Repository();
-                    repository.setName(r.name());
-                    repository.setBranches(getBranches(user.login(), r.name()));
-                    return repository;
-                }).toList();
-
+    private ApiResponse createApiResponse(
+            UserDto user,
+            List<RepositoryDto> repositoryDtoList
+    ) {
         ApiResponse apiResponse = new ApiResponse();
-        apiResponse.setOwnerLogin(user.login());
-        apiResponse.setRepositories(repositories);
+        apiResponse.setOwnerLogin(user.getUsername());
+        apiResponse.setRepositories(repositoryDtoList);
 
         return apiResponse;
     }
 
-    private List<RepositoryBranch> getBranches(String owner, String repositoryName) {
+    private UserDto createUserDto(String username) {
+        User user = githubService.getGithubUser(username);
+        UserDto userDto = new UserDto();
+        userDto.setUsername(user.login());
+
+        return userDto;
+    }
+
+    private List<RepositoryDto> getRepositoryDtoList(String username) {
+        return githubService.getGithubUserRepository(username, false).stream()
+                .map(repository -> {
+                    RepositoryDto repositoryDto = createRepositoryDto(username, repository.name());
+                    return repositoryDto;
+                }).toList();
+    }
+
+    private RepositoryDto createRepositoryDto(
+            String username,
+            String repositoryName
+    ) {
+        RepositoryDto repositoryDto = new RepositoryDto();
+        repositoryDto.setName(repositoryName);
+        repositoryDto.setBranches(getBranchListDto(username, repositoryName));
+
+        return repositoryDto;
+    }
+
+    private List<BranchDto> getBranchListDto(
+            String owner,
+            String repositoryName
+    ) {
         return githubService.getGithubUserRepositoryBranch(owner, repositoryName).stream()
-                .map(b -> {
-                    RepositoryBranch branch = new RepositoryBranch();
-                    branch.setName(b.name());
-                    branch.setSha(b.commit().sha());
-                    return branch;
+                .map(branch -> {
+                    BranchDto branchDto = createBranchDto(branch);
+                    return branchDto;
                 }).toList();
 
+    }
+
+    private BranchDto createBranchDto(Branch branch) {
+        BranchDto branchDto = new BranchDto();
+        branchDto.setName(branch.name());
+        branchDto.setSha(branch.commit().sha());
+        return branchDto;
     }
 }

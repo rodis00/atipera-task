@@ -3,8 +3,8 @@ package com.rodis00.atiperatask.record;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record GithubUserRepository(
+public record Branch(
         String name,
-        Boolean fork
+        Commit commit
 ) {
 }
